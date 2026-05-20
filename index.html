@@ -1,0 +1,157 @@
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Netflix Vis</title>
+  <script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
+  <script src="js/netflix.js"></script>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: sans-serif; background: #fff; }
+
+    #app { display: flex; height: 100vh; }
+
+    /* ── Sidebar ─────────────────────────────── */
+    #sidebar {
+      width: 280px;
+      min-width: 280px;
+      padding: 20px;
+      background: #f7f7f7;
+      border-right: 1px solid #ddd;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    #sidebar #placeholder { color: #bbb; margin-top: 60px; text-align: center; font-size: 0.9em; }
+    #sidebar img#movie-poster { width: 100%; border-radius: 4px; display: none; }
+    #sidebar #movie-title { font-size: 1em; font-weight: bold; display: none; }
+    #sidebar #movie-meta  { font-size: 0.8em; color: #555; line-height: 1.6; display: none; }
+    #sidebar #movie-overview { font-size: 0.78em; color: #444; line-height: 1.5; display: none; }
+
+    /* ── Main area ───────────────────────────── */
+    #main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+
+    #controls {
+      padding: 10px 20px;
+      display: flex;
+      gap: 20px;
+      align-items: center;
+      flex-wrap: wrap;
+      border-bottom: 1px solid #ddd;
+      background: #fafafa;
+    }
+    #controls label { font-size: 0.85em; margin-right: 4px; }
+    #controls select { font-size: 0.85em; }
+
+    /* ── Chart canvases ─────────────────────── */
+    #charts {
+      flex: 1;
+      display: flex;
+      flex-direction: row;
+      min-height: 0;
+    }
+    #scatter { flex: 1; overflow: hidden; border-right: 1px solid #ddd; }
+    #right-col { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+    #barchart  { flex: 1; overflow: hidden; border-bottom: 1px solid #ddd; }
+    #linechart { flex: 1; overflow: hidden; }
+
+    /* ── Chart elements ──────────────────────── */
+    .axis path, .axis line { fill: none; stroke: #bbb; shape-rendering: crispEdges; }
+    .axis text { font-size: 11px; fill: #555; }
+    .axis-label { font-size: 12px; fill: #333; }
+
+    .scatter-dot { cursor: pointer; opacity: 0.65; stroke: #fff; stroke-width: 0.5; transition: opacity 0.1s; }
+    .scatter-dot:hover    { opacity: 1; stroke: #333; stroke-width: 1.5; }
+    .scatter-dot.selected { opacity: 1; stroke: #222; stroke-width: 2; }
+
+    .line-dot { pointer-events: none; }
+
+    .bar { transition: opacity 0.1s; }
+    .bar:hover { opacity: 0.8 !important; }
+
+    .scatter-brush .selection,
+    .line-brush .selection { fill: steelblue; fill-opacity: 0.12; stroke: steelblue; stroke-width: 1; }
+
+    .legend text { font-size: 11px; fill: #444; }
+  </style>
+</head>
+<body onload="init()">
+
+<div id="app">
+
+  <!-- ── Sidebar: movie details shown on circle click ── -->
+  <div id="sidebar">
+    <div id="placeholder">Click a circle to see movie details</div>
+    <img id="movie-poster" alt="poster">
+    <div id="movie-title"></div>
+    <div id="movie-meta"></div>
+    <div id="movie-overview"></div>
+  </div>
+
+  <!-- ── Main: controls + scatterplot ── -->
+  <div id="main">
+
+    <div id="controls">
+      <div>
+        <label for="xdropdown">X:</label>
+        <select id="xdropdown">
+          <option value="tmdb_vote_average">Vote Average</option>
+          <option value="year">Year</option>
+          <option value="runtime_min">Runtime (min)</option>
+          <option value="tmdb_vote_count">Vote Count</option>
+          <option value="popularity">Popularity</option>
+        </select>
+      </div>
+      <div>
+        <label for="ydropdown">Y:</label>
+        <select id="ydropdown">
+          <option value="popularity">Popularity</option>
+          <option value="tmdb_vote_average">Vote Average</option>
+          <option value="year">Year</option>
+          <option value="runtime_min">Runtime (min)</option>
+          <option value="tmdb_vote_count">Vote Count</option>
+        </select>
+      </div>
+      <div>
+        <label for="sizedropdown">Size:</label>
+        <select id="sizedropdown">
+          <option value="tmdb_vote_count">Vote Count</option>
+          <option value="popularity">Popularity</option>
+          <option value="runtime_min">Runtime (min)</option>
+          <option value="tmdb_vote_average">Vote Average</option>
+        </select>
+      </div>
+      <div>
+        <label for="colordropdown">Color:</label>
+        <select id="colordropdown">
+          <option value="primary_genre">Genre</option>
+          <option value="original_language">Language</option>
+        </select>
+      </div>
+      <div>
+        <label for="metricdropdown">Metric:</label>
+        <select id="metricdropdown">
+          <option value="tmdb_vote_average">Vote Average</option>
+          <option value="popularity">Popularity</option>
+          <option value="runtime_min">Runtime (min)</option>
+          <option value="tmdb_vote_count">Vote Count</option>
+        </select>
+      </div>
+      <button id="update" onclick="updateClicked()">Update</button>
+      <button id="filter" onclick="filterClicked()">Filter</button>
+      <button id="reset"  onclick="resetClicked()">Reset</button>
+    </div>
+
+    <div id="charts">
+      <div id="scatter"></div>
+      <div id="right-col">
+        <div id="barchart"></div>
+        <div id="linechart"></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+</body>
+</html>
